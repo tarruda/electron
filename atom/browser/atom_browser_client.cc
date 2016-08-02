@@ -265,18 +265,8 @@ bool AtomBrowserClient::CanCreateWindow(
     bool* no_javascript_access) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
 
-  if (delegate_) {
-    content::BrowserThread::PostTask(content::BrowserThread::UI, FROM_HERE,
-        base::Bind(&api::App::OnCreateWindow,
-                   base::Unretained(static_cast<api::App*>(delegate_)),
-                                    target_url,
-                                    frame_name,
-                                    disposition,
-                                    render_process_id,
-                                    opener_render_frame_id));
-  }
-
-  return false;
+  *no_javascript_access = false;
+  return true;
 }
 
 brightray::BrowserMainParts* AtomBrowserClient::OverrideCreateBrowserMainParts(

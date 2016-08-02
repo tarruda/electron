@@ -14,7 +14,6 @@ namespace atom {
 
 class AtomBindings;
 class PreferencesManager;
-class NodeBindings;
 
 class AtomRendererClient : public content::ContentRendererClient {
  public:
@@ -22,31 +21,19 @@ class AtomRendererClient : public content::ContentRendererClient {
   virtual ~AtomRendererClient();
 
   void DidClearWindowObject(content::RenderFrame* render_frame);
-  void DidCreateScriptContext(
-      v8::Handle<v8::Context> context, content::RenderFrame* render_frame);
-  void WillReleaseScriptContext(
-      v8::Handle<v8::Context> context, content::RenderFrame* render_frame);
 
  private:
-  enum NodeIntegration {
-    ALL,
-    EXCEPT_IFRAME,
-    MANUAL_ENABLE_IFRAME,
-    DISABLE,
-  };
-
   // content::ContentRendererClient:
   void RenderThreadStarted() override;
   void RenderFrameCreated(content::RenderFrame*) override;
   void RenderViewCreated(content::RenderView*) override;
-  void RunScriptsAtDocumentStart(content::RenderFrame* render_frame) override;
-  void RunScriptsAtDocumentEnd(content::RenderFrame* render_frame) override;
   blink::WebSpeechSynthesizer* OverrideSpeechSynthesizer(
       blink::WebSpeechSynthesizerClient* client) override;
   bool OverrideCreatePlugin(content::RenderFrame* render_frame,
                             blink::WebLocalFrame* frame,
                             const blink::WebPluginParams& params,
                             blink::WebPlugin** plugin) override;
+  bool AllowPopup() override;
   bool ShouldFork(blink::WebLocalFrame* frame,
                   const GURL& url,
                   const std::string& http_method,
@@ -61,8 +48,6 @@ class AtomRendererClient : public content::ContentRendererClient {
       std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems)
       override;
 
-  std::unique_ptr<NodeBindings> node_bindings_;
-  std::unique_ptr<AtomBindings> atom_bindings_;
   std::unique_ptr<PreferencesManager> preferences_manager_;
 
   DISALLOW_COPY_AND_ASSIGN(AtomRendererClient);

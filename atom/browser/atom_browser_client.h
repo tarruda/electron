@@ -106,8 +106,16 @@ class AtomBrowserClient : public brightray::BrowserClient,
   void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
 
  private:
+  // Add/remove a process id to `sandboxed_renderers_`.
+  void AddSandboxedRendererId(int process_id);
+  void RemoveSandboxedRendererId(int process_id);
+  bool IsRendererSandboxed(int process_id);
+
   // pending_render_process => current_render_process.
   std::map<int, int> pending_processes_;
+  // Set that contains the process ids of all sandboxed renderers
+  std::set<int> sandboxed_renderers_;
+  base::Lock sandboxed_renderers_lock_;
 
   std::unique_ptr<AtomResourceDispatcherHostDelegate>
       resource_dispatcher_host_delegate_;

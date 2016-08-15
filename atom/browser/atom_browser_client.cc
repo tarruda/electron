@@ -84,6 +84,21 @@ content::WebContents* AtomBrowserClient::GetWebContentsFromProcessID(
   return WebContentsPreferences::GetWebContentsFromProcessID(process_id);
 }
 
+void AtomBrowserClient::AddSandboxedRendererId(int process_id) {
+  base::AutoLock auto_lock(sandboxed_renderers_lock_);
+  sandboxed_renderers_.insert(process_id);
+}
+
+void AtomBrowserClient::RemoveSandboxedRendererId(int process_id) {
+  base::AutoLock auto_lock(sandboxed_renderers_lock_);
+  sandboxed_renderers_.erase(process_id);
+}
+
+bool AtomBrowserClient::IsRendererSandboxed(int process_id) {
+  base::AutoLock auto_lock(sandboxed_renderers_lock_);
+  return sandboxed_renderers_.count(process_id);
+}
+
 void AtomBrowserClient::RenderProcessWillLaunch(
     content::RenderProcessHost* host) {
   int process_id = host->GetID();
@@ -91,6 +106,13 @@ void AtomBrowserClient::RenderProcessWillLaunch(
   host->AddFilter(new TtsMessageFilter(process_id, host->GetBrowserContext()));
   host->AddFilter(
       new WidevineCdmMessageFilter(process_id, host->GetBrowserContext()));
+
+  content::WebContents* web_contents = GetWebContentsFromProcessID(process_id);
+  if (WebContentsPreferences::IsSandboxed(web_contents)) {
+    AddSandboxedRendererId(host->GetID());
+    // ensure the sandboxed renderer id is removed later
+    host->AddObserver(this);
+  }
 }
 
 content::SpeechRecognitionManagerDelegate*
@@ -140,7 +162,10 @@ void AtomBrowserClient::OverrideSiteInstanceForNavigation(
   }
 
   // Restart renderer process for all navigations except "javacript:" scheme.
-  if (url.SchemeIs(url::kJavaScriptScheme))
+  // Also don't restart for sandboxed renderers(Let chromium determine when a
+  // new SiteInstance should be created).
+  if (url.SchemeIs(url::kJavaScriptScheme) ||
+      IsRendererSandboxed(current_instance->GetProcess()->GetID()))
     return;
 
   scoped_refptr<content::SiteInstance> site_instance =
@@ -265,6 +290,11 @@ bool AtomBrowserClient::CanCreateWindow(
     bool* no_javascript_access) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
 
+  if (IsRendererSandboxed(render_process_id)) {
+    *no_javascript_access = false;
+    return true;
+  }
+
   if (delegate_) {
     content::BrowserThread::PostTask(content::BrowserThread::UI, FROM_HERE,
         base::Bind(&api::App::OnCreateWindow,
@@ -313,6 +343,7 @@ void AtomBrowserClient::RenderProcessHostDestroyed(
       break;
     }
   }
+  RemoveSandboxedRendererId(process_id);
 }
 
 }  // namespace atom

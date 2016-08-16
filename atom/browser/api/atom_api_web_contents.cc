@@ -6,6 +6,7 @@
 
 #include <set>
 #include <string>
+#include <iostream>
 
 #include "atom/browser/api/atom_api_debugger.h"
 #include "atom/browser/api/atom_api_session.h"
@@ -414,6 +415,31 @@ void WebContents::OnCreateWindow(const GURL& target_url,
     Emit("-new-window", target_url, frame_name, disposition);
   else
     Emit("new-window", target_url, frame_name, disposition);
+}
+
+void WebContents::WebContentsCreated(content::WebContents* source_contents,
+                                     int opener_render_frame_id,
+                                     const std::string& frame_name,
+                                     const GURL& target_url,
+                                     content::WebContents* new_contents) {
+  v8::Locker locker(isolate());
+  v8::HandleScope handle_scope(isolate());
+  auto api_web_contents = CreateFrom(isolate(), new_contents, BROWSER_WINDOW);
+  Emit("-new-web-contents", api_web_contents, target_url, frame_name);
+}
+
+void WebContents::AddNewContents(content::WebContents* source,
+                                 content::WebContents* new_contents,
+                                 WindowOpenDisposition disposition,
+                                 const gfx::Rect& initial_rect,
+                                 bool user_gesture,
+                                 bool* was_blocked) {
+  v8::Locker locker(isolate());
+  v8::HandleScope handle_scope(isolate());
+  auto api_web_contents = CreateFrom(isolate(), new_contents);
+  Emit("-new-native-window", api_web_contents, disposition, user_gesture,
+      initial_rect.x(), initial_rect.y(), initial_rect.width(),
+      initial_rect.height());
 }
 
 content::WebContents* WebContents::OpenURLFromTab(

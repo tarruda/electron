@@ -12,6 +12,7 @@
 #include "atom/browser/relauncher.h"
 #include "atom/common/google_api_key.h"
 #include "atom/renderer/atom_renderer_client.h"
+#include "atom/renderer/atom_sandboxed_renderer_client.h"
 #include "atom/utility/atom_content_utility_client.h"
 #include "base/command_line.h"
 #include "base/debug/stack_trace.h"
@@ -150,7 +151,7 @@ content::ContentRendererClient*
 
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
         switches::kEnableSandbox)) {
-    renderer_client_.reset(new content::ContentRendererClient);
+    renderer_client_.reset(new AtomSandboxedRendererClient);
   } else {
     renderer_client_.reset(new AtomRendererClient);
   }

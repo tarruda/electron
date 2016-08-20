@@ -7,12 +7,144 @@
 #include <string>
 #include <vector>
 
+#include "atom/renderer/atom_render_view_observer.h"
+#include "atom/renderer/api/atom_api_renderer_ipc.h"
+#include "content/public/renderer/render_frame.h"
+#include "content/public/renderer/render_frame_observer.h"
+#include "content/public/renderer/render_view.h"
+#include "content/public/renderer/render_view_observer.h"
+#include "ipc/ipc_message_macros.h"
+#include "atom/common/api/api_messages.h"
+#include "third_party/WebKit/public/web/WebView.h"
+#include "third_party/WebKit/public/web/WebFrame.h"
+#include "third_party/WebKit/public/web/WebKit.h"
+#include "atom_natives.h"
+
 namespace atom {
+
+namespace {
+
+class AtomSandboxedRenderFrameObserver : public content::RenderFrameObserver {
+ public:
+  AtomSandboxedRenderFrameObserver(content::RenderFrame* frame,
+                                   AtomSandboxedRendererClient* renderer_client)
+      : content::RenderFrameObserver(frame),
+        render_frame_(frame),
+        renderer_client_(renderer_client) {}
+
+  // content::RenderFrameObserver:
+  void DidCreateScriptContext(v8::Handle<v8::Context> context,
+                              int extension_group,
+                              int world_id) override {
+    renderer_client_->DidCreateScriptContext(context, render_frame_);
+  }
+
+ private:
+  content::RenderFrame* render_frame_;
+  AtomSandboxedRendererClient* renderer_client_;
+
+  DISALLOW_COPY_AND_ASSIGN(AtomSandboxedRenderFrameObserver);
+};
+
+class AtomSandboxedRenderViewObserver : public AtomRenderViewObserver {
+ public:
+  AtomSandboxedRenderViewObserver(content::RenderView* render_view,
+                                  AtomSandboxedRendererClient* renderer_client)
+    : AtomRenderViewObserver(render_view, nullptr),
+    renderer_client_(renderer_client) {
+    }
+
+ protected:
+  void EmitIPCEvent(blink::WebFrame* frame,
+                    const base::string16& channel,
+                    const base::ListValue& args) override {
+    if (!frame || frame->isWebRemoteFrame())
+      return;
+
+    auto isolate = blink::mainThreadIsolate();
+    v8::HandleScope handle_scope(isolate);
+    auto context = frame->mainWorldScriptContext();
+    v8::Context::Scope context_scope(context);
+    renderer_client_->EmitIPCEvent(context, channel, args);
+  }
+
+ private:
+  AtomSandboxedRendererClient* renderer_client_;
+  DISALLOW_COPY_AND_ASSIGN(AtomSandboxedRenderViewObserver);
+};
+
+}  // namespace
+
 
 AtomSandboxedRendererClient::AtomSandboxedRendererClient() {
 }
 
 AtomSandboxedRendererClient::~AtomSandboxedRendererClient() {
+}
+
+void AtomSandboxedRendererClient::RenderFrameCreated(
+    content::RenderFrame* render_frame) {
+  new AtomSandboxedRenderFrameObserver(render_frame, this);
+}
+
+void AtomSandboxedRendererClient::RenderViewCreated(
+    content::RenderView* render_view) {
+  new AtomSandboxedRenderViewObserver(render_view, this);
+}
+
+void AtomSandboxedRendererClient::DidCreateScriptContext(
+    v8::Handle<v8::Context> context, content::RenderFrame* render_frame) {
+  auto isolate = context->GetIsolate();
+  v8::HandleScope handle_scope(isolate);
+  v8::Context::Scope context_scope(context);
+  // Wrap the bundle into a function that receives the native IPC object, to
+  // avoid polluting the global namespace.
+  std::string preload_bundle_native(node::preload_bundle_native,
+      node::preload_bundle_native + sizeof(node::preload_bundle_native));
+  std::stringstream ss;
+  ss << "(function(binding, preloadEntry) {\n";
+  ss << preload_bundle_native << "\n";
+  ss << "})";
+  std::string preload_wrapper = ss.str();
+  // Compile the preload wrapper function
+  auto script = v8::Script::Compile(v8::String::NewFromUtf8(
+        isolate,
+        preload_wrapper.c_str(),
+        v8::String::kNormalString,
+        preload_wrapper.length()));
+  // Execute to get a reference to the wrapper function.
+  auto result = script->Run(context).ToLocalChecked();
+  auto func = v8::Handle<v8::Function>::Cast(result);
+  // Create and initialize the IPC object
+  auto ipc = v8::Object::New(isolate);
+  api::Initialize(ipc, v8::Null(isolate), context, nullptr);
+  v8::Local<v8::Value> args[] = {ipc};
+  // Execute it, passing the IPC object as argument.
+  (void)func->Call(context, v8::Null(isolate), 1, args);
+  // Privately store the ipc object.
+  auto ipc_key = v8::String::NewFromUtf8(isolate, "ipc",
+      v8::NewStringType::kNormal).ToLocalChecked();
+  auto private_ipc_key = v8::Private::ForApi(isolate, ipc_key);
+  context->Global()->SetPrivate(context, private_ipc_key, ipc);
+}
+
+void AtomSandboxedRendererClient::EmitIPCEvent(v8::Handle<v8::Context> context,
+                                               const base::string16& channel,
+                                               const base::ListValue& args) {
+  auto isolate = context->GetIsolate();
+  auto ipc_key = v8::String::NewFromUtf8(isolate, "ipc",
+      v8::NewStringType::kNormal).ToLocalChecked();
+  auto private_ipc_key = v8::Private::ForApi(isolate, ipc_key);
+  v8::Local<v8::Value> ipc_value;
+  (void)context->Global()->GetPrivate(context, private_ipc_key).ToLocal(
+      &ipc_value);
+  auto ipc = v8::Handle<v8::Object>::Cast(ipc_value);
+  auto callback_key = v8::String::NewFromUtf8(isolate, "onMessage",
+      v8::NewStringType::kNormal).ToLocalChecked();
+  auto callback_value = ipc->Get(callback_key);
+  DCHECK(callback_value->IsFunction());
+  // auto callback = v8::Handle<v8::Function>::Cast(callback_value);
+  // (void)callback->Call(context, ipc, 1, args);
 }
 
 }  // namespace atom

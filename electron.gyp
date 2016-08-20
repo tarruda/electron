@@ -5,6 +5,8 @@
     'company_name%': 'GitHub, Inc',
     'company_abbr%': 'github',
     'version%': '1.3.3',
+    'js2c_input_dir': '<(SHARED_INTERMEDIATE_DIR)/js2c',
+    'preload_bundle': '<(js2c_input_dir)/preload_bundle.js',
   },
   'includes': [
     'filenames.gypi',
@@ -410,13 +412,47 @@
       ],
     },  # target app2asar
     {
-      'target_name': 'atom_js2c',
+      'target_name': 'atom_browserify',
       'type': 'none',
+      'actions': [
+        {
+          'action_name': 'atom_browserify',
+          'inputs': [
+            '<@(browserify_sources)',
+          ],
+          'outputs': [
+            '<(preload_bundle)',
+          ],
+          'action': [
+            './node_modules/.bin/browserify',
+            '<@(_inputs)',
+            '-o',
+            '<@(_outputs)',
+          ],
+        }
+      ],
+    },  # target atom_browserify
+    {
+      'target_name': 'atom_js2c',
+      'dependencies': [
+        'atom_browserify',
+      ],
+      'type': 'none',
+      'copies': [
+        {
+          'destination': '<(js2c_input_dir)',
+          'files': [
+            '<@(js2c_sources)',
+          ],
+        },
+      ],
       'actions': [
         {
           'action_name': 'atom_js2c',
           'inputs': [
+            # List all input files that should trigger a rebuild with js2c
             '<@(js2c_sources)',
+            '<@(browserify_sources)',
           ],
           'outputs': [
             '<(SHARED_INTERMEDIATE_DIR)/atom_natives.h',
@@ -425,7 +461,7 @@
             'python',
             'tools/js2c.py',
             '<@(_outputs)',
-            '<@(_inputs)',
+            '<(js2c_input_dir)',
           ],
         }
       ],

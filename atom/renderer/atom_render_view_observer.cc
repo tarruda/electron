@@ -72,9 +72,9 @@ void EmitIPCEvent(blink::WebFrame* frame,
   v8::Context::Scope context_scope(context);
 
   // Only emit IPC event for context with node integration.
-  node::Environment* env = node::Environment::GetCurrent(context);
-  if (!env)
-    return;
+  // node::Environment* env = node::Environment::GetCurrent(context);
+  // if (!env)
+  //   return;
 
   v8::Local<v8::Object> ipc;
   if (GetIPCObject(isolate, context, &ipc)) {

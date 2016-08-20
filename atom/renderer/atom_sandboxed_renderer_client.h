@@ -3,6 +3,7 @@
 
 #include "content/public/renderer/content_renderer_client.h"
 #include "content/public/renderer/render_frame_observer.h"
+#include "base/values.h"
 
 namespace atom {
 
@@ -10,6 +11,13 @@ class AtomSandboxedRendererClient : public content::ContentRendererClient {
  public:
   AtomSandboxedRendererClient();
   virtual ~AtomSandboxedRendererClient();
+
+  void DidCreateScriptContext(
+      v8::Handle<v8::Context> context, content::RenderFrame* render_frame);
+
+  // content::ContentRendererClient:
+  void RenderFrameCreated(content::RenderFrame*) override;
+  void RenderViewCreated(content::RenderView*) override;
 
   DISALLOW_COPY_AND_ASSIGN(AtomSandboxedRendererClient);
 };

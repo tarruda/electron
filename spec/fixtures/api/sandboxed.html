@@ -47,6 +47,17 @@
           })
           popup = open('http://www.google.com/#q=electron', '', 'top=65,left=55,width=505,height=605')
         })
+      },
+      'verify-ipc-sender': () => {
+        popup = open()
+        ipcRenderer.once('verified', () => {
+          ipcRenderer.send('parent-answer')
+        })
+        popup.ipcRenderer.once('verified', () => {
+          popup.ipcRenderer.send('child-answer')
+        })
+        ipcRenderer.send('parent-ready')
+        popup.ipcRenderer.send('child-ready')
       }
     }
 

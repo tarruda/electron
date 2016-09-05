@@ -684,7 +684,7 @@ describe('browser-window module', function () {
           assert.equal(options.y, 65)
           assert.equal(options.width, 505)
           assert.equal(options.height, 605)
-          ipcMain.on('child-loaded', function (event, openerIsNull, html) {
+          ipcMain.once('child-loaded', function (event, openerIsNull, html) {
             assert(openerIsNull)
             assert.equal(html, '<h1>http://www.google.com/#q=electron</h1>')
             ipcMain.once('answer', function (event, exceptionMessage) {
@@ -692,6 +692,44 @@ describe('browser-window module', function () {
               done()
             })
             w.webContents.send('child-loaded')
+          })
+        })
+      })
+
+      it('should set ipc event sender correctly', function (done) {
+        w.destroy()
+        w = new BrowserWindow({
+          show: false,
+          webPreferences: {
+            sandboxed: true,
+            preload: preload
+          }
+        })
+        let htmlPath = path.join(fixtures, 'api', 'sandboxed.html?verify-ipc-sender')
+        const pageUrl = 'file://' + htmlPath
+        w.loadURL(pageUrl)
+        w.webContents.once('new-window', (e, url, frameName, disposition, options) => {
+          let parentWc = w.webContents
+          let childWc = options.webContents
+          assert.notEqual(parentWc, childWc)
+          ipcMain.once('parent-ready', function (event) {
+            assert.equal(parentWc, event.sender)
+            parentWc.send('verified')
+          })
+          ipcMain.once('child-ready', function (event) {
+            assert.equal(childWc, event.sender)
+            childWc.send('verified')
+          })
+          let remaining = 2
+          ipcMain.once('child-answer', function () {
+            if (!--remaining) {
+              done()
+            }
+          })
+          ipcMain.once('parent-answer', function () {
+            if (!--remaining) {
+              done()
+            }
           })
         })
       })

@@ -575,6 +575,15 @@ describe('browser-window module', function () {
     })
 
     describe('"sandboxed" option', function () {
+      function waitForEvents (emitter, events, callback) {
+        let count = events.length
+        for (let event of events) {
+          emitter.once(event, () => {
+            if (!--count) callback()
+          })
+        }
+      }
+
       const preload = path.join(fixtures, 'module', 'preload-sandboxed.js')
 
       // http protocol to simulate accessing a another domain. this is required
@@ -720,30 +729,14 @@ describe('browser-window module', function () {
             assert.equal(childWc, event.sender)
             childWc.send('verified')
           })
-          let remaining = 2
-          ipcMain.once('child-answer', function () {
-            if (!--remaining) {
-              done()
-            }
-          })
-          ipcMain.once('parent-answer', function () {
-            if (!--remaining) {
-              done()
-            }
-          })
+          waitForEvents(ipcMain, [
+            'parent-answer',
+            'child-answer'
+          ], done)
         })
       })
 
       describe('event handling', function () {
-        function waitForEvents (emitter, events, callback) {
-          let count = events.length
-          for (let event of events) {
-            emitter.once(event, () => {
-              if (!--count) callback()
-            })
-          }
-        }
-
         it('works for window events', function (done) {
           waitForEvents(w, [
             'page-title-updated'

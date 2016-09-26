@@ -162,7 +162,7 @@ void AtomSandboxedRendererClient::DidCreateScriptContext(
     mate::ConvertToV8(isolate, preload_script)
   };
   // Execute the function with proper arguments
-  (void)func->Call(context, v8::Null(isolate), 2, args);
+  ignore_result(func->Call(context, v8::Null(isolate), 2, args));
   // Store the bindingt privately for handling messages from the main process.
   auto binding_key = mate::ConvertToV8(isolate, kBindingKey)->ToString();
   auto private_binding_key = v8::Private::ForApi(isolate, binding_key);
@@ -195,7 +195,7 @@ void AtomSandboxedRendererClient::InvokeBindingCallback(
   auto callback_value = binding->Get(callback_key);
   DCHECK(callback_value->IsFunction());  // set by sandboxed_renderer/init.js
   auto callback = v8::Handle<v8::Function>::Cast(callback_value);
-  (void)callback->Call(context, binding, args.size(), &args[0]);
+  ignore_result(callback->Call(context, binding, args.size(), &args[0]));
 }
 
 }  // namespace atom

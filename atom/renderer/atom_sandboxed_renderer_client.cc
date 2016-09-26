@@ -26,10 +26,11 @@
 #include "third_party/WebKit/public/web/WebScriptSource.h"
 #include "third_party/WebKit/public/web/WebView.h"
 
-#define BINDING_KEY "binding"
 namespace atom {
 
 namespace {
+
+const std::string kBindingKey = "binding";
 
 class AtomSandboxedRenderFrameObserver : public content::RenderFrameObserver {
  public:
@@ -149,11 +150,8 @@ void AtomSandboxedRendererClient::DidCreateScriptContext(
   ss << "})";
   std::string preload_wrapper = ss.str();
   // Compile the wrapper and run it to get the function object
-  auto script = v8::Script::Compile(v8::String::NewFromUtf8(
-        isolate,
-        preload_wrapper.c_str(),
-        v8::String::kNormalString,
-        preload_wrapper.length()));
+  auto script = v8::Script::Compile(
+      mate::ConvertToV8(isolate, preload_wrapper)->ToString());
   auto func = v8::Handle<v8::Function>::Cast(
       script->Run(context).ToLocalChecked());
   // Create and initialize the binding object
@@ -161,14 +159,12 @@ void AtomSandboxedRendererClient::DidCreateScriptContext(
   api::Initialize(binding, v8::Null(isolate), context, nullptr);
   v8::Local<v8::Value> args[] = {
     binding,
-    v8::String::NewFromUtf8(isolate, preload_script.c_str(),
-        v8::NewStringType::kNormal).ToLocalChecked()
+    mate::ConvertToV8(isolate, preload_script)
   };
   // Execute the function with proper arguments
   (void)func->Call(context, v8::Null(isolate), 2, args);
   // Store the bindingt privately for handling messages from the main process.
-  auto binding_key = v8::String::NewFromUtf8(isolate, BINDING_KEY,
-      v8::NewStringType::kNormal).ToLocalChecked();
+  auto binding_key = mate::ConvertToV8(isolate, kBindingKey)->ToString();
   auto private_binding_key = v8::Private::ForApi(isolate, binding_key);
   context->Global()->SetPrivate(context, private_binding_key, binding);
 }
@@ -183,11 +179,10 @@ void AtomSandboxedRendererClient::WillReleaseScriptContext(
 
 void AtomSandboxedRendererClient::InvokeBindingCallback(
     v8::Handle<v8::Context> context,
-    const char* callback_name,
+    std::string callback_name,
     std::vector<v8::Handle<v8::Value>> args) {
   auto isolate = context->GetIsolate();
-  auto binding_key = v8::String::NewFromUtf8(isolate, BINDING_KEY,
-      v8::NewStringType::kNormal).ToLocalChecked();
+  auto binding_key = mate::ConvertToV8(isolate, kBindingKey)->ToString();
   auto private_binding_key = v8::Private::ForApi(isolate, binding_key);
   auto global_object = context->Global();
   v8::Local<v8::Value> value;
@@ -196,8 +191,7 @@ void AtomSandboxedRendererClient::InvokeBindingCallback(
   if (value.IsEmpty() || !value->IsObject())
     return;
   auto binding = value->ToObject();
-  auto callback_key = v8::String::NewFromUtf8(isolate, callback_name,
-      v8::NewStringType::kNormal).ToLocalChecked();
+  auto callback_key = mate::ConvertToV8(isolate, callback_name)->ToString();
   auto callback_value = binding->Get(callback_key);
   DCHECK(callback_value->IsFunction());  // set by sandboxed_renderer/init.js
   auto callback = v8::Handle<v8::Function>::Cast(callback_value);

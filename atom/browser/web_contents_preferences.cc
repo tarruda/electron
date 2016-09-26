@@ -211,7 +211,7 @@ bool WebContentsPreferences::IsSandboxed(content::WebContents* web_contents) {
 
   base::DictionaryValue& web_preferences = self->web_preferences_;
   bool sandboxed = false;
-  web_preferences.GetBoolean("sandboxed", &sandboxed);
+  web_preferences.GetBoolean("sandbox", &sandboxed);
   return sandboxed;
 }
 

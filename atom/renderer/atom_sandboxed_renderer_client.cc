@@ -46,6 +46,7 @@ class AtomSandboxedRenderFrameObserver : public content::RenderFrameObserver {
     render_frame_->GetWebFrame()->executeScript(
         blink::WebScriptSource("void 0"));
   }
+
   void DidCreateScriptContext(v8::Handle<v8::Context> context,
                               int extension_group,
                               int world_id) override {
@@ -54,11 +55,16 @@ class AtomSandboxedRenderFrameObserver : public content::RenderFrameObserver {
     world_id_ = world_id;
     renderer_client_->DidCreateScriptContext(context, render_frame_);
   }
+
   void WillReleaseScriptContext(v8::Local<v8::Context> context,
                                 int world_id) override {
     if (world_id_ != world_id)
       return;
     renderer_client_->WillReleaseScriptContext(context, render_frame_);
+  }
+
+  void OnDestruct() override {
+    delete this;
   }
 
  private:

@@ -574,7 +574,7 @@ describe('browser-window module', function () {
       })
     })
 
-    describe('"sandboxed" option', function () {
+    describe('"sandbox" option', function () {
       function waitForEvents (emitter, events, callback) {
         let count = events.length
         for (let event of events) {
@@ -584,7 +584,7 @@ describe('browser-window module', function () {
         }
       }
 
-      const preload = path.join(fixtures, 'module', 'preload-sandboxed.js')
+      const preload = path.join(fixtures, 'module', 'preload-sandbox.js')
 
       // http protocol to simulate accessing a another domain. this is required
       // because the code paths for cross domain popups is different.
@@ -616,7 +616,7 @@ describe('browser-window module', function () {
         w = new BrowserWindow({
           show: false,
           webPreferences: {
-            sandboxed: true,
+            sandbox: true,
             preload: preload
           }
         })
@@ -628,11 +628,11 @@ describe('browser-window module', function () {
         w = new BrowserWindow({
           show: false,
           webPreferences: {
-            sandboxed: true,
+            sandbox: true,
             preload: preload
           }
         })
-        let htmlPath = path.join(fixtures, 'api', 'sandboxed.html?exit-event')
+        let htmlPath = path.join(fixtures, 'api', 'sandbox.html?exit-event')
         const pageUrl = 'file://' + htmlPath
         w.loadURL(pageUrl)
         ipcMain.once('answer', function (event, url) {
@@ -650,11 +650,11 @@ describe('browser-window module', function () {
         w = new BrowserWindow({
           show: false,
           webPreferences: {
-            sandboxed: true,
+            sandbox: true,
             preload: preload
           }
         })
-        let htmlPath = path.join(fixtures, 'api', 'sandboxed.html?window-open')
+        let htmlPath = path.join(fixtures, 'api', 'sandbox.html?window-open')
         const pageUrl = 'file://' + htmlPath
         w.loadURL(pageUrl)
         w.webContents.once('new-window', (e, url, frameName, disposition, options) => {
@@ -680,11 +680,11 @@ describe('browser-window module', function () {
         w = new BrowserWindow({
           show: false,
           webPreferences: {
-            sandboxed: true,
+            sandbox: true,
             preload: preload
           }
         })
-        let htmlPath = path.join(fixtures, 'api', 'sandboxed.html?window-open-external')
+        let htmlPath = path.join(fixtures, 'api', 'sandbox.html?window-open-external')
         const pageUrl = 'file://' + htmlPath
         w.loadURL(pageUrl)
         w.webContents.once('new-window', (e, url, frameName, disposition, options) => {
@@ -710,11 +710,11 @@ describe('browser-window module', function () {
         w = new BrowserWindow({
           show: false,
           webPreferences: {
-            sandboxed: true,
+            sandbox: true,
             preload: preload
           }
         })
-        let htmlPath = path.join(fixtures, 'api', 'sandboxed.html?verify-ipc-sender')
+        let htmlPath = path.join(fixtures, 'api', 'sandbox.html?verify-ipc-sender')
         const pageUrl = 'file://' + htmlPath
         w.loadURL(pageUrl)
         w.webContents.once('new-window', (e, url, frameName, disposition, options) => {
@@ -741,7 +741,7 @@ describe('browser-window module', function () {
           waitForEvents(w, [
             'page-title-updated'
           ], done)
-          w.loadURL('file://' + path.join(fixtures, 'api', 'sandboxed.html?window-events'))
+          w.loadURL('file://' + path.join(fixtures, 'api', 'sandbox.html?window-events'))
         })
 
         it('works for web contents events', function (done) {
@@ -750,7 +750,7 @@ describe('browser-window module', function () {
             'did-fail-load',
             'did-stop-loading'
           ], done)
-          w.loadURL('file://' + path.join(fixtures, 'api', 'sandboxed.html?webcontents-stop'))
+          w.loadURL('file://' + path.join(fixtures, 'api', 'sandbox.html?webcontents-stop'))
           waitForEvents(w.webContents, [
             'did-finish-load',
             'did-frame-finish-load',
@@ -761,7 +761,7 @@ describe('browser-window module', function () {
             'did-frame-finish-load',
             'dom-ready'
           ], done)
-          w.loadURL('file://' + path.join(fixtures, 'api', 'sandboxed.html?webcontents-events'))
+          w.loadURL('file://' + path.join(fixtures, 'api', 'sandbox.html?webcontents-events'))
         })
       })
     })

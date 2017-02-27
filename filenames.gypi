@@ -66,7 +66,6 @@
       'lib/renderer/api/desktop-capturer.js',
       'lib/renderer/api/exports/electron.js',
       'lib/renderer/api/ipc-renderer.js',
-      'lib/renderer/api/ipc-renderer-setup.js',
       'lib/renderer/api/remote.js',
       'lib/renderer/api/screen.js',
       'lib/renderer/api/web-frame.js',
@@ -76,7 +75,6 @@
       'lib/renderer/extensions/web-navigation.js',
     ],
     'browserify_entries': [
-      'lib/renderer/api/ipc-renderer-setup.js',
       'lib/sandboxed_renderer/init.js',
       'lib/sandboxed_renderer/api/exports/electron.js',
     ],

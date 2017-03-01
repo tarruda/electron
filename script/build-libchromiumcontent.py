@@ -31,9 +31,14 @@ def main():
   execute_stdout([sys.executable, bootstrap])
   execute_stdout([sys.executable, update, '-t', args.target_arch,
                   '--defines', args.defines])
-  execute_stdout([sys.executable, build, '-R', '-t', args.target_arch])
-  execute_stdout([sys.executable, create_dist, '-c', 'static_library',
-                  '--no_zip', '-t', args.target_arch])
+
+  build_argv = [sys.executable, build, '-t', args.target_arch]
+  if args.debug:
+      execute_stdout(build_argv + ['-c', 'shared_library'])
+  else:
+      execute_stdout(build_argv + ['-T'])
+      execute_stdout([sys.executable, create_dist, '-c', 'static_library',
+                      '--no_zip', '-t', args.target_arch])
 
 
 def parse_args():
@@ -42,6 +47,8 @@ def parse_args():
                       help='Specify the arch to build for')
   parser.add_argument('--defines', default='',
                       help='The definetions passed to gyp')
+  parser.add_argument('-d', '--debug', action='store_true',
+                      help='Build debug/component version of libchromiumcontent')
   parser.add_argument('-v', '--verbose', action='store_true',
                       help='Prints the output of the subprocesses')
   return parser.parse_args()

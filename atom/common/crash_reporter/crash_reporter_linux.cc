@@ -69,6 +69,7 @@ void CrashReporterLinux::InitBreakpad(const std::string& product_name,
   crash_keys_->SetKeyValue("prod", ATOM_PRODUCT_NAME);
   crash_keys_->SetKeyValue("ver", version.c_str());
   upload_url_ = submit_url;
+  upload_to_server_ = upload_to_server;
 
   for (StringMap::const_iterator iter = upload_parameters_.begin();
        iter != upload_parameters_.end(); ++iter)
@@ -117,7 +118,7 @@ bool CrashReporterLinux::CrashDone(const MinidumpDescriptor& minidump,
   info.fd = minidump.fd();
   info.distro = base::g_linux_distro;
   info.distro_length = my_strlen(base::g_linux_distro);
-  info.upload = true;
+  info.upload = self->upload_to_server_;
   info.process_start_time = self->process_start_time_;
   info.oom_size = base::g_oom_size;
   info.pid = self->pid_;

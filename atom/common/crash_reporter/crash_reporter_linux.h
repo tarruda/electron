@@ -54,6 +54,7 @@ class CrashReporterLinux : public CrashReporter {
   uint64_t process_start_time_;
   pid_t pid_;
   std::string upload_url_;
+  bool upload_to_server_;
 
   DISALLOW_COPY_AND_ASSIGN(CrashReporterLinux);
 };

@@ -86,6 +86,12 @@ void InitializeBindings(v8::Local<v8::Object> binding,
   mate::Dictionary b(isolate, binding);
   b.SetMethod("get", GetBinding);
   b.SetMethod("crash", AtomBindings::Crash);
+
+  // Pass in CLI flags needed to setup the renderer
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(switches::kGuestInstanceID))
+    b.Set(options::kGuestInstanceID,
+        command_line->GetSwitchValueASCII(switches::kGuestInstanceID));
 }
 
 class AtomSandboxedRenderViewObserver : public AtomRenderViewObserver {

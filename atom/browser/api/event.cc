@@ -6,6 +6,7 @@
 
 #include "atom/common/api/api_messages.h"
 #include "atom/common/native_mate_converters/string16_converter.h"
+#include "atom/common/native_mate_converters/value_converter.h"
 #include "content/public/browser/web_contents.h"
 #include "native_mate/object_template_builder.h"
 
@@ -40,11 +41,11 @@ void Event::PreventDefault(v8::Isolate* isolate) {
                            v8::True(isolate));
 }
 
-bool Event::SendReply(const base::string16& json) {
+bool Event::SendReply(const base::ListValue& result) {
   if (message_ == nullptr || sender_ == nullptr)
     return false;
 
-  AtomViewHostMsg_Message_Sync::WriteReplyParams(message_, json);
+  AtomViewHostMsg_Message_Sync::WriteReplyParams(message_, result);
   bool success = sender_->Send(message_);
   message_ = nullptr;
   sender_ = nullptr;

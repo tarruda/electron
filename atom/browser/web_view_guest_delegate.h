@@ -61,6 +61,8 @@ class WebViewGuestDelegate : public content::BrowserPluginGuestDelegate,
                   int element_instance_id,
                   bool is_full_page_plugin,
                   const base::Closure& completion_callback) final;
+  content::WebContents* CreateNewGuestWindow(
+      const content::WebContents::CreateParams& create_params) override;
   bool CanBeEmbeddedInsideCrossProcessFrames() override;
   content::RenderWidgetHost* GetOwnerRenderWidgetHost() override;
   content::SiteInstance* GetOwnerSiteInstance() override;

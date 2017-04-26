@@ -12,6 +12,7 @@
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/render_widget_host_view.h"
+#include "content/browser/web_contents/web_contents_impl.h"
 
 namespace atom {
 
@@ -141,6 +142,21 @@ void WebViewGuestDelegate::WillAttach(
   embedder_web_contents_ = embedder_web_contents;
   is_full_page_plugin_ = is_full_page_plugin;
   completion_callback.Run();
+}
+
+content::WebContents* WebViewGuestDelegate::CreateNewGuestWindow(
+    const content::WebContents::CreateParams& create_params) {
+  content::WebContents::CreateParams params(create_params);
+  auto parent = api_web_contents_->GetWebContents();
+  params.context = parent->GetNativeView();
+  params.initial_size = parent->GetContainerBounds().size();
+  auto web_contents = content::WebContents::Create(params);
+  // see web_contents_impl.cc:2153 and
+  // WebContentsImpl::CreateRenderWidgetHostViewForRenderManager for details
+  auto web_contents_impl = static_cast<content::WebContentsImpl*>(web_contents);
+  web_contents_impl->CreateRenderWidgetHostViewForRenderManager(
+      web_contents->GetRenderViewHost());
+  return web_contents;
 }
 
 void WebViewGuestDelegate::OnZoomLevelChanged(

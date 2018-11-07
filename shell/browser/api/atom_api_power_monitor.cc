@@ -35,10 +35,17 @@ namespace electron {
 
 namespace api {
 
-PowerMonitor::PowerMonitor(v8::Isolate* isolate) {
+PowerMonitor::PowerMonitor(v8::Isolate* isolate)
+#ifdef OS_WIN
+    : shutdown_blocker_(new ShutdownBlockerWin(false))
+#endif
+{
 #if defined(OS_LINUX)
   SetShutdownHandler(base::BindRepeating(&PowerMonitor::ShouldShutdown,
                                          base::Unretained(this)));
+#elif defined(OS_WIN)
+  shutdown_blocker_->SetShutdownHandler(base::BindRepeating(
+        &PowerMonitor::ShouldShutdown, base::Unretained(this)));
 #elif defined(OS_MACOSX)
   Browser::Get()->SetShutdownHandler(base::BindRepeating(
       &PowerMonitor::ShouldShutdown, base::Unretained(this)));

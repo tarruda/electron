@@ -20,6 +20,10 @@
 
 namespace electron {
 
+#ifdef OS_WIN
+class ShutdownBlockerWin;
+#endif
+
 class RendererClientBase : public content::ContentRendererClient {
  public:
   RendererClientBase();
@@ -68,6 +72,9 @@ class RendererClientBase : public content::ContentRendererClient {
   void DidSetUserAgent(const std::string& user_agent) override;
 
  private:
+#ifdef OS_WIN
+  std::unique_ptr<ShutdownBlockerWin> shutdown_blocker_;
+#endif
 #if defined(WIDEVINE_CDM_AVAILABLE)
   ChromeKeySystemsProvider key_systems_provider_;
 #endif

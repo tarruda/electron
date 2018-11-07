@@ -5,10 +5,14 @@
 #ifndef SHELL_BROWSER_API_ATOM_API_POWER_MONITOR_H_
 #define SHELL_BROWSER_API_ATOM_API_POWER_MONITOR_H_
 
+#include <memory>
 #include "base/compiler_specific.h"
 #include "native_mate/handle.h"
 #include "shell/browser/api/trackable_object.h"
 #include "shell/browser/lib/power_observer.h"
+#if defined(OS_WIN)
+#include "shell/common/lib/shutdown_blocker_win.h"
+#endif
 #include "ui/base/idle/idle.h"
 
 namespace electron {
@@ -69,6 +73,9 @@ class PowerMonitor : public mate::TrackableObject<PowerMonitor>,
 
   // The window used for processing events.
   HWND window_;
+
+  // An object that encapsulates logic to handle shutdown/reboot events
+  std::unique_ptr<ShutdownBlockerWin> shutdown_blocker_;
 #endif
 
   DISALLOW_COPY_AND_ASSIGN(PowerMonitor);

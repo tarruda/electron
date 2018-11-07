@@ -20,6 +20,7 @@
 #include "native_mate/dictionary.h"
 #include "printing/buildflags/buildflags.h"
 #include "shell/common/color_util.h"
+#include "shell/common/native_mate_converters/callback.h"
 #include "shell/common/native_mate_converters/value_converter.h"
 #include "shell/common/options_switches.h"
 #include "shell/renderer/atom_autofill_agent.h"
@@ -42,6 +43,7 @@
 
 #if defined(OS_WIN)
 #include <shlobj.h>
+#include "shell/common/lib/shutdown_blocker_win.h"
 #endif
 
 #if BUILDFLAG(ENABLE_PDF_VIEWER)
@@ -75,7 +77,11 @@ std::vector<std::string> ParseSchemesCLISwitch(base::CommandLine* command_line,
 
 }  // namespace
 
-RendererClientBase::RendererClientBase() {
+RendererClientBase::RendererClientBase()
+#ifdef OS_WIN
+    : shutdown_blocker_(new ShutdownBlockerWin(true))
+#endif
+{
   auto* command_line = base::CommandLine::ForCurrentProcess();
   // Parse --standard-schemes=scheme1,scheme2
   std::vector<std::string> standard_schemes_list =
@@ -114,6 +120,11 @@ void RendererClientBase::AddRenderBindings(
     v8::Isolate* isolate,
     v8::Local<v8::Object> binding_object) {
   mate::Dictionary dict(isolate, binding_object);
+#ifdef OS_WIN
+  dict.SetMethod("setShutdownHandler", base::BindRepeating(
+        &ShutdownBlockerWin::SetShutdownHandler,
+        base::Unretained(shutdown_blocker_.get())));
+#endif
 }
 
 void RendererClientBase::RenderThreadStarted() {

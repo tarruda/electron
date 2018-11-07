@@ -519,6 +519,8 @@ filenames = {
     "shell/common/deprecate_util.h",
     "shell/common/mouse_util.cc",
     "shell/common/mouse_util.h",
+    "shell/common/lib/shutdown_blocker_win.h",
+    "shell/common/lib/shutdown_blocker_win.cc",
     "shell/common/mac/main_application_bundle.h",
     "shell/common/mac/main_application_bundle.mm",
     "shell/common/native_mate_converters/accelerator_converter.cc",
